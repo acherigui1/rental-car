@@ -1,0 +1,44 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: php_dev
+    volumes:
+      - .:/srv/app
+    ports:
+      - '8888:8888' # Exposer le serveur Symfony sur le port 8888
+    environment:
+      DATABASE_URL: "postgresql://root:root@database:5432/symfony"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: php -S 0.0.0.0:8888 -t public # Utiliser le serveur intégré de PHP pour Symfony
+    depends_on:
+      - database
+
+  php:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+      target: php_dev
+    user: root
+    volumes:
+      - .:/srv/app
+      - ./.docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - ~/.config/composer:/home/prod/.composer
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  database:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: symfony
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" 
+
+volumes:
+  database_data:
